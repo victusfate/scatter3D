@@ -192,6 +192,11 @@
           titleColor2.position.y = dimMax + 20;
           scatterPlot.add(titleColor2);
 
+          var titleColor3 = createText2D('Class 3',colorLegend[2]);
+          titleColor3.position.x = -20;
+          titleColor3.position.y = dimMax + 30;
+          scatterPlot.add(titleColor3);
+
           var pointCount = data.length;
           var pointGeo = new THREE.Geometry();
           for (var i=0; i < pointCount; i++) {
