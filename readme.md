@@ -1,4 +1,4 @@
-![Scatter3D](https://github.com/victusfate/cameo-bobross/raw/gh-pages/images/image.png)
+![Scatter3D](https://raw.github.com/victusfate/scatter3D/gh-pages/images/image.png)
 Scatter3D 
 ===
 
