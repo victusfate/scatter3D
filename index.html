@@ -9,15 +9,27 @@
     <link rel="stylesheet" href="stylesheets/pygment_trac.css">
     <script src="javascripts/scale.fix.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+   
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
+
+    <script src="javascripts/Three.js"></script><style type="text/css"></style>
+    <style type="text/css">
+      body {
+        margin: 0px;
+        padding: 0px;
+      }
+    </style>
+
+    <script src="javascripts/raf.js"></script>
   </head>
+
   <body>
-    <div class="wrapper">
+    <div id="wrapper0" class="wrapper">
       <header>
         <h1 class="header">Scatter3d</h1>
-        <p class="header">webgl 3D scatter plot of decent sized files. includes quick and dirty tab delimited-&gt; json file converter</p>
+        <p class="header">webgl 3D scatter plot of decent sized files. includes quick and dirty tab delimited-&gt; json file converter. Original scatter plot source at <a href="http://gdd11-webgl.appspot.com/three/three_8.html">gdd11-webgl</a></p>
 
         <ul>
           <li class="download"><a class="buttons" href="https://github.com/victusfate/scatter3D/zipball/master">Download ZIP</a></li>
@@ -30,43 +42,246 @@
 
       </header>
       <section>
-        <h3>
-<a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
+        <div id="canvas0" width="1093" height="941"></div>        
+        <script type='text/javascript' src="test.json"></script>
+        
+        <script>
+          // <!--
+          function createTextCanvas(text, color, font, size) {
+            size = size || 24;
+            var canvas = document.createElement('canvas');
+            var ctx = canvas.getContext('2d');
+            var fontStr = (size + 'px ') + (font || 'Arial');
+            ctx.font = fontStr;
+            var w = ctx.measureText(text).width;
+            var h = Math.ceil(size);
+            canvas.width = w;
+            canvas.height = h;
+            ctx.font = fontStr;
+            ctx.fillStyle = color || 'black';
+            ctx.fillText(text, 0, Math.ceil(size*0.8));
+            return canvas;
+          }
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+          function createText2D(text, color, font, size, segW, segH) {
+            var canvas = createTextCanvas(text, color, font, size);
+            var plane = new THREE.PlaneGeometry(canvas.width, canvas.height, segW, segH);
+            var tex = new THREE.Texture(canvas);
+            tex.needsUpdate = true;
+            var planeMat = new THREE.MeshBasicMaterial({
+              map: tex, color: 0xffffff, transparent: true
+            });
+            var mesh = new THREE.Mesh(plane, planeMat);
+            mesh.scale.set(0.25, 0.25, 0.25);
+            mesh.doubleSided = true;
+            return mesh;
+          }
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
-</code></pre>
+          var renderer = new THREE.WebGLRenderer({antialias: true});
+          var w = document.body.clientWidth || 800;
+          var h = document.body.clientHeight || 800;
+          console.log('client width,height',w,h);
+          renderer.setSize(w, h);
+          var canvasDiv = document.getElementById('canvas0');
+          canvasDiv.appendChild(renderer.domElement);
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+          renderer.setClearColorHex(0xEEEEEE, 1.0);
 
-<h3>
-<a name="designer-templates" class="anchor" href="#designer-templates"><span class="octicon octicon-link"></span></a>Designer Templates</h3>
+          var camera = new THREE.PerspectiveCamera( 45, w/h, 1, 1000 );
+          camera.position.z = 600;
+          camera.position.x = 128;
+          camera.position.y = 128;
 
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
+          var scene = new THREE.Scene();
+          // scene.fog = new THREE.FogExp2( 0xFFFFFF, 0.0035 );
 
-<h3>
-<a name="rather-drive-stick" class="anchor" href="#rather-drive-stick"><span class="octicon octicon-link"></span></a>Rather Drive Stick?</h3>
+          var scatterPlot = new THREE.Object3D();
+          scene.add(scatterPlot);
 
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+          scatterPlot.rotation.y = 0.5;
+          function v(x,y,z){ return new THREE.Vertex(new THREE.Vector3(x,y,z)); }
+          
+          var dimMin = 0;
+          var dimMax = 255;
 
-<h3>
-<a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
+          var lineGeo = new THREE.Geometry();
+          lineGeo.vertices.push(
+            v(dimMin, 0, 0), v(dimMax, 0, 0),
+            v(0, dimMin, 0), v(0, dimMax, 0),
+            v(0, 0, dimMin), v(0, 0, dimMax),
 
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+            v(dimMin, dimMax, dimMin), v(dimMax, dimMax, dimMin),
+            v(dimMin, dimMin, dimMin), v(dimMax, dimMin, dimMin),
+            v(dimMin, dimMax, dimMax), v(dimMax, dimMax, dimMax),
+            v(dimMin, dimMin, dimMax), v(dimMax, dimMin, dimMax),
 
-<h3>
-<a name="support-or-contact" class="anchor" href="#support-or-contact"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
+            v(dimMin, 0, dimMax), v(dimMax, 0, dimMax),
+            v(dimMin, 0, dimMin), v(dimMax, 0, dimMin),
+            v(dimMin, dimMax, 0), v(dimMax, dimMax, 0),
+            v(dimMin, dimMin, 0), v(dimMax, dimMin, 0),
 
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
+            v(dimMax, dimMin, dimMin), v(dimMax, dimMax, dimMin),
+            v(dimMin, dimMin, dimMin), v(dimMin, dimMax, dimMin),
+            v(dimMax, dimMin, dimMax), v(dimMax, dimMax, dimMax),
+            v(dimMin, dimMin, dimMax), v(dimMin, dimMax, dimMax),
+
+            v(0, dimMin, dimMax), v(0, dimMax, dimMax),
+            v(0, dimMin, dimMin), v(0, dimMax, dimMin),
+            v(dimMax, dimMin, 0), v(dimMax, dimMax, 0),
+            v(dimMin, dimMin, 0), v(dimMin, dimMax, 0),
+
+            v(dimMax, dimMax, dimMin), v(dimMax, dimMax, dimMax),
+            v(dimMax, dimMin, dimMin), v(dimMax, dimMin, dimMax),
+            v(dimMin, dimMax, dimMin), v(dimMin, dimMax, dimMax),
+            v(dimMin, dimMin, dimMin), v(dimMin, dimMin, dimMax),
+
+            v(dimMin, 0, dimMin), v(dimMin, 0, dimMax),
+            v(dimMax, 0, dimMin), v(dimMax, 0, dimMax),
+            v(0, dimMax, dimMin), v(0, dimMax, dimMax),
+            v(0, dimMin, dimMin), v(0, dimMin, dimMax)
+          );
+          var lineMat = new THREE.LineBasicMaterial({color: 0x808080, lineWidth: 1});
+          var line = new THREE.Line(lineGeo, lineMat);
+          line.type = THREE.Lines;
+          scatterPlot.add(line);
+
+          // var titleX = createText2D('-X');
+          // titleX.position.x = -60;
+          // scatterPlot.add(titleX);
+
+          var titleX = createText2D('X');
+          titleX.position.x = dimMax + 5;
+          scatterPlot.add(titleX);
+
+          // var titleX = createText2D('-Y');
+          // titleX.position.y = -60;
+          // scatterPlot.add(titleX);
+
+          var titleX = createText2D('Y');
+          titleX.position.y = dimMax + 5;
+          scatterPlot.add(titleX);
+
+          // var titleX = createText2D('-Z');
+          // titleX.position.z = -60;
+          // scatterPlot.add(titleX);
+
+          var titleX = createText2D('Z');
+          titleX.position.z = dimMax + 5;
+          scatterPlot.add(titleX);
+
+          var mat = new THREE.ParticleBasicMaterial({vertexColors:true, size: 1.5});
+
+
+          var colorLegend = [ '0000ff', 'ff0000', '00ff00', '000000'];
+          var colorPixels = [ 
+            { r: 0, g: 0, b:255 }, 
+            { r: 255, g: 0, b:0 }, 
+            { r: 0, g: 255, b:0 }, 
+            { r: 0, g: 0, b:0 }
+          ];
+
+          var titleColor1 = createText2D('Class 1',colorLegend[0]);
+          titleColor1.position.x = -20;
+          titleColor1.position.y = dimMax/2;
+          scatterPlot.add(titleColor1);
+
+          var titleColor2 = createText2D('Class 2',colorLegend[1]);
+          titleColor2.position.x = -20;
+          titleColor2.position.y = dimMax/2 + 10;
+          scatterPlot.add(titleColor2);
+
+          var pointCount = data.length;
+          var pointGeo = new THREE.Geometry();
+          for (var i=0; i < pointCount; i++) {
+            var arr = data[i];
+            if (arr) {
+              var x = arr[0];
+              var y = arr[1];
+              var z = arr[2];
+              var c = arr[3];
+              if (x && y && z && c) {
+                pointGeo.vertices.push(new THREE.Vertex( new THREE.Vector3(x,y,z) ));
+                var indx = pointGeo.vertices.length - 1;
+                pointGeo.vertices[indx].angle = Math.atan2(z,x);
+                pointGeo.vertices[indx].radius = Math.sqrt(x*x+z*z);
+                pointGeo.vertices[indx].speed = (z/100)*(x/100);
+                // pointGeo.colors.push(new THREE.Color().setHSV(
+                //   (50 * c)/100, (50 * c)/100, (50 * c)/100));
+                var pc = colorPixels[c-1];
+                pointGeo.colors.push(new THREE.Color().setRGB(pc.r,pc.g,pc.b));
+              }
+            }
+          }
+
+          var points = new THREE.ParticleSystem(pointGeo, mat);
+          scatterPlot.add(points);
+
+          renderer.render(scene, camera);
+          var paused = false;
+          var last = new Date().getTime();
+          var down = false;
+          var sx = 0, sy = 0;
+          window.onmousedown = function (ev){
+            down = true; sx = ev.clientX; sy = ev.clientY;
+          };
+          window.onmouseup = function(){ down = false; };
+          window.onmousemove = function(ev) {
+            if (down) {
+              var dx = ev.clientX - sx;
+              var dy = ev.clientY - sy;
+              scatterPlot.rotation.y += dx*0.01;
+              camera.position.y += dy;
+              sx += dx;
+              sy += dy;
+            }
+          }
+          
+          function MouseWheelHandler(e) {
+
+            // cross-browser wheel delta
+            var e = window.event || e; // old IE support
+            var delta = Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail)));
+            camera.position.z -= 50 * delta;
+          }
+
+          if (window.addEventListener) {
+            // IE9, Chrome, Safari, Opera
+            window.addEventListener("mousewheel", MouseWheelHandler, false);
+            // Firefox
+            window.addEventListener("DOMMouseScroll", MouseWheelHandler, false);
+          }
+          // IE 6/7/8
+          else window.attachEvent("onmousewheel", MouseWheelHandler);          
+
+
+          var animating = false;
+          window.ondblclick = function() { animating = !animating; };
+          function animate(t) {
+            if (!paused) {
+              last = t;
+              if (animating) {
+                var v = pointGeo.vertices;
+                for (var i=0; i<v.length; i++) {
+                  var u = v[i];
+                  u.angle += u.speed * 0.01;
+                  u.position.x = Math.cos(u.angle)*u.radius;
+                  u.position.z = Math.sin(u.angle)*u.radius;
+                }
+                pointGeo.__dirtyVertices = true;
+              }
+              renderer.clear();
+              camera.lookAt(scene.position);
+              renderer.render(scene, camera);
+            }
+            window.requestAnimationFrame(animate, renderer.domElement);
+          };
+          animate(new Date().getTime());
+          onmessage = function(ev) {
+            paused = (ev.data == 'pause');
+          };
+          //-->
+        </script>
       </section>
-      <footer>
-        <p><small>Hosted on <a href="http://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
-      </footer>
     </div>
-    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
-		
   </body>
 </html>
