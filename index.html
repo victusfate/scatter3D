@@ -20,12 +20,24 @@
         margin: 0px;
         padding: 0px;
       }
+      #canvas0 {
+        position: absolute;
+        margin: 0px;
+        padding: 0px;
+      }
+      header {
+        float: left;
+      }
+      #wrapper0 {
+        float: left;
+      }
     </style>
 
     <script src="javascripts/raf.js"></script>
   </head>
 
   <body>
+    <div id="canvas0" width='1000px' height='600px'></div>        
     <div id="wrapper0" class="wrapper">
       <header>
         <h1 class="header">Scatter3d</h1>
@@ -42,7 +54,6 @@
 
       </header>
       <section>
-        <div id="canvas0" width="1093" height="941"></div>        
         <script type='text/javascript' src="dbSkinCovs.dat.json"></script>
         
         <script>
@@ -80,8 +91,8 @@
           var renderer = new THREE.WebGLRenderer({antialias: true});
           // var w = document.body.clientWidth || 600;
           // var h = document.body.clientHeight || 600;
-          var w = 800;
-          var h = 800;
+          var w = screen.width/1.5;
+          var h = screen.height/1.5;
           console.log('client width,height',w,h);
           renderer.setSize(w, h);
           var canvasDiv = document.getElementById('canvas0');
