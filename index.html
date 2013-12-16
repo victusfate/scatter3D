@@ -43,7 +43,7 @@
       </header>
       <section>
         <div id="canvas0" width="1093" height="941"></div>        
-        <script type='text/javascript' src="test.json"></script>
+        <script type='text/javascript' src="dbSkinCovs.dat.json"></script>
         
         <script>
           // <!--
@@ -206,12 +206,13 @@
               }
             }
           }
-          console.log('colors after loading all pixels',colors);
           var iOffset = 0;        
+          var yOffset = -(Object.keys(colors).length * 2.5) - 40;
+          console.log('colors after loading all pixels',colors,'yOffset',yOffset);
           for (var iClass in colors) {
             var titleColor1 = createText2D('Class '+iClass,colors[iClass].toString(16));
             titleColor1.position.x = -20;
-            titleColor1.position.y = 10 * iOffset;
+            titleColor1.position.y = yOffset + 5 * iOffset;
             scatterPlot.add(titleColor1);
             iOffset++;
           }
