@@ -173,29 +173,12 @@
 
           var mat = new THREE.ParticleBasicMaterial({vertexColors:true, size: 1.5});
 
+          var randomColor = function() {
+            return Math.floor(Math.random()*16777215);
+            // return '#' + Math.floor(Math.random()*16777215).toString(16);
+          }
 
-          var colorLegend = [ '0000ff', 'ff0000', '00ff00', '000000'];
-          var colorPixels = [ 
-            { r: 0, g: 0, b:255 }, 
-            { r: 255, g: 0, b:0 }, 
-            { r: 0, g: 255, b:0 }, 
-            { r: 0, g: 0, b:0 }
-          ];
-
-          var titleColor1 = createText2D('Class 1',colorLegend[0]);
-          titleColor1.position.x = -20;
-          titleColor1.position.y = dimMax + 10;
-          scatterPlot.add(titleColor1);
-
-          var titleColor2 = createText2D('Class 2',colorLegend[1]);
-          titleColor2.position.x = -20;
-          titleColor2.position.y = dimMax + 20;
-          scatterPlot.add(titleColor2);
-
-          var titleColor3 = createText2D('Class 3',colorLegend[2]);
-          titleColor3.position.x = -20;
-          titleColor3.position.y = dimMax + 30;
-          scatterPlot.add(titleColor3);
+          var colors = {};       
 
           var pointCount = data.length;
           var pointGeo = new THREE.Geometry();
@@ -212,12 +195,25 @@
                 pointGeo.vertices[indx].angle = Math.atan2(z,x);
                 pointGeo.vertices[indx].radius = Math.sqrt(x*x+z*z);
                 pointGeo.vertices[indx].speed = (z/100)*(x/100);
-                // pointGeo.colors.push(new THREE.Color().setHSV(
-                //   (50 * c)/100, (50 * c)/100, (50 * c)/100));
-                var pc = colorPixels[c-1];
-                pointGeo.colors.push(new THREE.Color().setRGB(pc.r,pc.g,pc.b));
+                var pc = randomColor();
+                if (colors[c]) {
+                  pc = colors[c];
+                }
+                else {
+                    colors[c] = pc;
+                }
+                pointGeo.colors.push(new THREE.Color(pc));
               }
             }
+          }
+          console.log('colors after loading all pixels',colors);
+          var iOffset = 0;        
+          for (var iClass in colors) {
+            var titleColor1 = createText2D('Class '+iClass,colors[iClass].toString(16));
+            titleColor1.position.x = -20;
+            titleColor1.position.y = 10 * iOffset;
+            scatterPlot.add(titleColor1);
+            iOffset++;
           }
 
           var points = new THREE.ParticleSystem(pointGeo, mat);
