@@ -1,302 +1,576 @@
 <!doctype html>
 <html>
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Scatter3d by victusfate</title>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="chrome=1">
+        <title>Scatter3d by victusfate</title>
 
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <script src="javascripts/scale.fix.js"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-   
-    <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
+        <link rel="stylesheet" href="stylesheets/styles.css">
+        <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+        <script src="javascripts/scale.fix.js"></script>
+        <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+     
+        <!--[if lt IE 9]>
+        <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+        <![endif]-->
 
-    <script src="javascripts/Three.js"></script><style type="text/css"></style>
-    <style type="text/css">
-      body {
-        margin: 0px;
-        padding: 0px;
-      }
-      #canvas0 {
-        position: absolute;
-        margin: 0px;
-        padding: 0px;
-      }
-      header {
-        float: left;
-      }
-      #wrapper0 {
-        float: left;
-      }
-    </style>
-
-    <script src="javascripts/raf.js"></script>
-  </head>
-
-  <body>
-    <div id="canvas0" width='1000px' height='600px'></div>        
-    <div id="wrapper0" class="wrapper">
-      <header>
-        <h1 class="header">Scatter3d</h1>
-        <p class="header">webgl 3D scatter plot of decent sized files. includes quick and dirty tab delimited-&gt; json file converter. Original scatter plot source at <a href="http://gdd11-webgl.appspot.com/three/three_8.html">gdd11-webgl</a></p>
-
-        <ul>
-          <li class="download"><a class="buttons" href="https://github.com/victusfate/scatter3D/zipball/master">Download ZIP</a></li>
-          <li class="download"><a class="buttons" href="https://github.com/victusfate/scatter3D/tarball/master">Download TAR</a></li>
-          <li><a class="buttons github" href="https://github.com/victusfate/scatter3D">View On GitHub</a></li>
-        </ul>
-
-        <p class="header">This project is maintained by <a class="header name" href="https://github.com/victusfate">victusfate</a></p>
-
-
-      </header>
-      <section>
-        <script type='text/javascript' src="dbSkinCovs.dat.json"></script>
-        
-        <script>
-          // <!--
-          function createTextCanvas(text, color, font, size) {
-            size = size || 24;
-            var canvas = document.createElement('canvas');
-            var ctx = canvas.getContext('2d');
-            var fontStr = (size + 'px ') + (font || 'Arial');
-            ctx.font = fontStr;
-            var w = ctx.measureText(text).width;
-            var h = Math.ceil(size);
-            canvas.width = w;
-            canvas.height = h;
-            ctx.font = fontStr;
-            ctx.fillStyle = color || 'black';
-            ctx.fillText(text, 0, Math.ceil(size*0.8));
-            return canvas;
-          }
-
-          function createText2D(text, color, font, size, segW, segH) {
-            var canvas = createTextCanvas(text, color, font, size);
-            var plane = new THREE.PlaneGeometry(canvas.width, canvas.height, segW, segH);
-            var tex = new THREE.Texture(canvas);
-            tex.needsUpdate = true;
-            var planeMat = new THREE.MeshBasicMaterial({
-              map: tex, color: 0xffffff, transparent: true
-            });
-            var mesh = new THREE.Mesh(plane, planeMat);
-            mesh.scale.set(0.25, 0.25, 0.25);
-            mesh.doubleSided = true;
-            return mesh;
-          }
-
-          var renderer = new THREE.WebGLRenderer({antialias: true});
-          // var w = document.body.clientWidth || 600;
-          // var h = document.body.clientHeight || 600;
-          var w = screen.width/1.5;
-          var h = screen.height/1.5;
-          console.log('client width,height',w,h);
-          renderer.setSize(w, h);
-          var canvasDiv = document.getElementById('canvas0');
-          canvasDiv.appendChild(renderer.domElement);
-
-          renderer.setClearColorHex(0xEEEEEE, 1.0);
-
-          var camera = new THREE.PerspectiveCamera( 45, w/h, 1, 1000 );
-          camera.position.z = 200;
-          camera.position.x = 600;
-          camera.position.y = 400;
-
-          var scene = new THREE.Scene();
-          // scene.fog = new THREE.FogExp2( 0xFFFFFF, 0.0035 );
-
-          var scatterPlot = new THREE.Object3D();
-          scene.add(scatterPlot);
-
-          scatterPlot.rotation.y = 0.5;
-          function v(x,y,z){ return new THREE.Vertex(new THREE.Vector3(x,y,z)); }
-          
-          var dimMin = 0;
-          var dimMax = 255;
-
-          var lineGeo = new THREE.Geometry();
-          lineGeo.vertices.push(
-            v(dimMin, 0, 0), v(dimMax, 0, 0),
-            v(0, dimMin, 0), v(0, dimMax, 0),
-            v(0, 0, dimMin), v(0, 0, dimMax),
-
-            v(dimMin, dimMax, dimMin), v(dimMax, dimMax, dimMin),
-            v(dimMin, dimMin, dimMin), v(dimMax, dimMin, dimMin),
-            v(dimMin, dimMax, dimMax), v(dimMax, dimMax, dimMax),
-            v(dimMin, dimMin, dimMax), v(dimMax, dimMin, dimMax),
-
-            v(dimMin, 0, dimMax), v(dimMax, 0, dimMax),
-            v(dimMin, 0, dimMin), v(dimMax, 0, dimMin),
-            v(dimMin, dimMax, 0), v(dimMax, dimMax, 0),
-            v(dimMin, dimMin, 0), v(dimMax, dimMin, 0),
-
-            v(dimMax, dimMin, dimMin), v(dimMax, dimMax, dimMin),
-            v(dimMin, dimMin, dimMin), v(dimMin, dimMax, dimMin),
-            v(dimMax, dimMin, dimMax), v(dimMax, dimMax, dimMax),
-            v(dimMin, dimMin, dimMax), v(dimMin, dimMax, dimMax),
-
-            v(0, dimMin, dimMax), v(0, dimMax, dimMax),
-            v(0, dimMin, dimMin), v(0, dimMax, dimMin),
-            v(dimMax, dimMin, 0), v(dimMax, dimMax, 0),
-            v(dimMin, dimMin, 0), v(dimMin, dimMax, 0),
-
-            v(dimMax, dimMax, dimMin), v(dimMax, dimMax, dimMax),
-            v(dimMax, dimMin, dimMin), v(dimMax, dimMin, dimMax),
-            v(dimMin, dimMax, dimMin), v(dimMin, dimMax, dimMax),
-            v(dimMin, dimMin, dimMin), v(dimMin, dimMin, dimMax),
-
-            v(dimMin, 0, dimMin), v(dimMin, 0, dimMax),
-            v(dimMax, 0, dimMin), v(dimMax, 0, dimMax),
-            v(0, dimMax, dimMin), v(0, dimMax, dimMax),
-            v(0, dimMin, dimMin), v(0, dimMin, dimMax)
-          );
-          var lineMat = new THREE.LineBasicMaterial({color: 0x808080, lineWidth: 1});
-          var line = new THREE.Line(lineGeo, lineMat);
-          line.type = THREE.Lines;
-          scatterPlot.add(line);
-
-          // var titleX = createText2D('-X');
-          // titleX.position.x = -60;
-          // scatterPlot.add(titleX);
-
-          var titleX = createText2D('X');
-          titleX.position.x = dimMax + 5;
-          scatterPlot.add(titleX);
-
-          // var titleX = createText2D('-Y');
-          // titleX.position.y = -60;
-          // scatterPlot.add(titleX);
-
-          var titleX = createText2D('Y');
-          titleX.position.y = dimMax + 5;
-          scatterPlot.add(titleX);
-
-          // var titleX = createText2D('-Z');
-          // titleX.position.z = -60;
-          // scatterPlot.add(titleX);
-
-          var titleX = createText2D('Z');
-          titleX.position.z = dimMax + 5;
-          scatterPlot.add(titleX);
-
-          var mat = new THREE.ParticleBasicMaterial({vertexColors:true, size: 1.5});
-
-          var randomColor = function() {
-            return Math.floor(Math.random()*16777215);
-            // return '#' + Math.floor(Math.random()*16777215).toString(16);
-          }
-
-          var colors = {};       
-
-          var pointCount = data.length;
-          var pointGeo = new THREE.Geometry();
-          for (var i=0; i < pointCount; i++) {
-            var arr = data[i];
-            if (arr) {
-              var x = arr[0];
-              var y = arr[1];
-              var z = arr[2];
-              var c = arr[3];
-              if (x && y && z && c) {
-                pointGeo.vertices.push(new THREE.Vertex( new THREE.Vector3(x,y,z) ));
-                var indx = pointGeo.vertices.length - 1;
-                pointGeo.vertices[indx].angle = Math.atan2(z,x);
-                pointGeo.vertices[indx].radius = Math.sqrt(x*x+z*z);
-                pointGeo.vertices[indx].speed = (z/100)*(x/100);
-                var pc = randomColor();
-                if (colors[c]) {
-                  pc = colors[c];
-                }
-                else {
-                    colors[c] = pc;
-                }
-                pointGeo.colors.push(new THREE.Color(pc));
-              }
+        <script src="javascripts/Three.js"></script><style type="text/css"></style>
+        <style type="text/css">
+            body {
+                margin: 0px;
+                padding: 0px;
             }
-          }
-          var iOffset = 0;        
-          var yOffset = -(Object.keys(colors).length * 2.5) - 40;
-          console.log('colors after loading all pixels',colors,'yOffset',yOffset);
-          for (var iClass in colors) {
-            var titleColor1 = createText2D('Class '+iClass,colors[iClass].toString(16));
-            titleColor1.position.x = -20;
-            titleColor1.position.y = yOffset + 5 * iOffset;
-            scatterPlot.add(titleColor1);
-            iOffset++;
-          }
-
-          var points = new THREE.ParticleSystem(pointGeo, mat);
-          scatterPlot.add(points);
-
-          renderer.render(scene, camera);
-          var paused = false;
-          var last = new Date().getTime();
-          var down = false;
-          var sx = 0, sy = 0;
-          window.onmousedown = function (ev){
-            down = true; sx = ev.clientX; sy = ev.clientY;
-          };
-          window.onmouseup = function(){ down = false; };
-          window.onmousemove = function(ev) {
-            if (down) {
-              var dx = ev.clientX - sx;
-              var dy = ev.clientY - sy;
-              scatterPlot.rotation.y += dx*0.01;
-              camera.position.y += dy;
-              sx += dx;
-              sy += dy;
+            #canvas0 {
+                position: absolute;
+                margin: 0px;
+                padding: 0px;
             }
-          }
-          
-          function MouseWheelHandler(e) {
-
-            // cross-browser wheel delta
-            var e = window.event || e; // old IE support
-            var delta = Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail)));
-            camera.position.z -= 50 * delta;
-          }
-
-          if (window.addEventListener) {
-            // IE9, Chrome, Safari, Opera
-            window.addEventListener("mousewheel", MouseWheelHandler, false);
-            // Firefox
-            window.addEventListener("DOMMouseScroll", MouseWheelHandler, false);
-          }
-          // IE 6/7/8
-          else window.attachEvent("onmousewheel", MouseWheelHandler);          
-
-
-          var animating = false;
-          window.ondblclick = function() { animating = !animating; };
-          function animate(t) {
-            if (!paused) {
-              last = t;
-              if (animating) {
-                var v = pointGeo.vertices;
-                for (var i=0; i<v.length; i++) {
-                  var u = v[i];
-                  u.angle += u.speed * 0.01;
-                  u.position.x = Math.cos(u.angle)*u.radius;
-                  u.position.z = Math.sin(u.angle)*u.radius;
-                }
-                pointGeo.__dirtyVertices = true;
-              }
-              renderer.clear();
-              camera.lookAt(scene.position);
-              renderer.render(scene, camera);
+            header {
+                float: left;
             }
-            window.requestAnimationFrame(animate, renderer.domElement);
-          };
-          animate(new Date().getTime());
-          onmessage = function(ev) {
-            paused = (ev.data == 'pause');
-          };
-          //-->
-        </script>
-      </section>
-    </div>
-  </body>
+            #wrapper0 {
+                float: left;
+            }
+        </style>
+
+        <script src="javascripts/raf.js"></script>
+    </head>
+
+    <body>
+        <div id="canvas0" width='1000px' height='600px'></div>        
+        <div id="wrapper0" class="wrapper">
+            <header>
+                <h1 class="header">Scatter3d</h1>
+                <p class="header">webgl 3D scatter plot of decent sized files. includes quick and dirty tab delimited-&gt; json file converter. Original scatter plot source at <a href="http://gdd11-webgl.appspot.com/three/three_8.html">gdd11-webgl</a></p>
+
+                <ul>
+                    <li class="download"><a class="buttons" href="https://github.com/victusfate/scatter3D/zipball/master">Download ZIP</a></li>
+                    <li class="download"><a class="buttons" href="https://github.com/victusfate/scatter3D/tarball/master">Download TAR</a></li>
+                    <li><a class="buttons github" href="https://github.com/victusfate/scatter3D">View On GitHub</a></li>
+                </ul>
+
+                <p class="header">This project is maintained by <a class="header name" href="https://github.com/victusfate">victusfate</a></p>
+
+
+            </header>
+            <section>
+                <script type='text/javascript' src="dbSkinCovs.dat.json"></script>
+                
+                <script>
+                    // <!--
+                    function createTextCanvas(text, color, font, size) {
+                        size = size || 24;
+                        var canvas = document.createElement('canvas');
+                        var ctx = canvas.getContext('2d');
+                        var fontStr = (size + 'px ') + (font || 'Arial');
+                        ctx.font = fontStr;
+                        var w = ctx.measureText(text).width;
+                        var h = Math.ceil(size);
+                        canvas.width = w;
+                        canvas.height = h;
+                        ctx.font = fontStr;
+                        ctx.fillStyle = color || 'black';
+                        ctx.fillText(text, 0, Math.ceil(size*0.8));
+                        return canvas;
+                    }
+
+                    function createText2D(text, color, font, size, segW, segH) {
+                        var canvas = createTextCanvas(text, color, font, size);
+                        var plane = new THREE.PlaneGeometry(canvas.width, canvas.height, segW, segH);
+                        var tex = new THREE.Texture(canvas);
+                        tex.needsUpdate = true;
+                        var planeMat = new THREE.MeshBasicMaterial({
+                            map: tex, color: 0xffffff, transparent: true
+                        });
+                        var mesh = new THREE.Mesh(plane, planeMat);
+                        mesh.scale.set(0.25, 0.25, 0.25);
+                        mesh.doubleSided = true;
+                        return mesh;
+                    }
+
+                    var renderer = new THREE.WebGLRenderer({antialias: true});
+                    // var w = document.body.clientWidth || 600;
+                    // var h = document.body.clientHeight || 600;
+                    var w = screen.width/1.5;
+                    var h = screen.height/1.5;
+                    console.log('client width,height',w,h);
+                    renderer.setSize(w, h);
+                    var canvasDiv = document.getElementById('canvas0');
+                    canvasDiv.appendChild(renderer.domElement);
+
+                    renderer.setClearColorHex(0xEEEEEE, 1.0);
+
+                    var camera = new THREE.PerspectiveCamera( 45, w/h, 1, 1000 );
+                    camera.position.z = 200;
+                    camera.position.x = 600;
+                    camera.position.y = 400;
+
+                    var scene = new THREE.Scene();
+                    // scene.fog = new THREE.FogExp2( 0xFFFFFF, 0.0035 );
+
+                    var scatterPlot = new THREE.Object3D();
+                    scene.add(scatterPlot);
+
+                    scatterPlot.rotation.y = 0.5;
+                    function v(x,y,z){ return new THREE.Vertex(new THREE.Vector3(x,y,z)); }
+                    
+                    var dimMin = 0;
+                    var dimMax = 255;
+
+                    var lineGeo = new THREE.Geometry();
+                    lineGeo.vertices.push(
+                        v(dimMin, 0, 0), v(dimMax, 0, 0),
+                        v(0, dimMin, 0), v(0, dimMax, 0),
+                        v(0, 0, dimMin), v(0, 0, dimMax),
+
+                        v(dimMin, dimMax, dimMin), v(dimMax, dimMax, dimMin),
+                        v(dimMin, dimMin, dimMin), v(dimMax, dimMin, dimMin),
+                        v(dimMin, dimMax, dimMax), v(dimMax, dimMax, dimMax),
+                        v(dimMin, dimMin, dimMax), v(dimMax, dimMin, dimMax),
+
+                        v(dimMin, 0, dimMax), v(dimMax, 0, dimMax),
+                        v(dimMin, 0, dimMin), v(dimMax, 0, dimMin),
+                        v(dimMin, dimMax, 0), v(dimMax, dimMax, 0),
+                        v(dimMin, dimMin, 0), v(dimMax, dimMin, 0),
+
+                        v(dimMax, dimMin, dimMin), v(dimMax, dimMax, dimMin),
+                        v(dimMin, dimMin, dimMin), v(dimMin, dimMax, dimMin),
+                        v(dimMax, dimMin, dimMax), v(dimMax, dimMax, dimMax),
+                        v(dimMin, dimMin, dimMax), v(dimMin, dimMax, dimMax),
+
+                        v(0, dimMin, dimMax), v(0, dimMax, dimMax),
+                        v(0, dimMin, dimMin), v(0, dimMax, dimMin),
+                        v(dimMax, dimMin, 0), v(dimMax, dimMax, 0),
+                        v(dimMin, dimMin, 0), v(dimMin, dimMax, 0),
+
+                        v(dimMax, dimMax, dimMin), v(dimMax, dimMax, dimMax),
+                        v(dimMax, dimMin, dimMin), v(dimMax, dimMin, dimMax),
+                        v(dimMin, dimMax, dimMin), v(dimMin, dimMax, dimMax),
+                        v(dimMin, dimMin, dimMin), v(dimMin, dimMin, dimMax),
+
+                        v(dimMin, 0, dimMin), v(dimMin, 0, dimMax),
+                        v(dimMax, 0, dimMin), v(dimMax, 0, dimMax),
+                        v(0, dimMax, dimMin), v(0, dimMax, dimMax),
+                        v(0, dimMin, dimMin), v(0, dimMin, dimMax)
+                    );
+                    var lineMat = new THREE.LineBasicMaterial({color: 0x808080, lineWidth: 1});
+                    var line = new THREE.Line(lineGeo, lineMat);
+                    line.type = THREE.Lines;
+                    scatterPlot.add(line);
+
+                    // add a fit line through the scatter
+                    var fitGeom = new THREE.Geometry();
+                    // var spline = new THREE.SplineCurve3([
+                    fitGeom.vertices.push(
+                        v(0,0,22.3628),
+                        v(1,1,23.7712),
+                        v(2,2,25.1757),
+                        v(3,3,26.5763),
+                        v(4,4,27.9731),
+                        v(5,5,29.3661),
+                        v(6,6,30.7551),
+                        v(7,7,32.1403),
+                        v(8,8,33.5217),
+                        v(9,9,34.8992),
+                        v(10,10,36.2728),
+                        v(11,11,37.6426),
+                        v(12,12,39.0085),
+                        v(13,13,40.3706),
+                        v(14,14,41.7288),
+                        v(15,15,43.0831),
+                        v(16,16,44.4336),
+                        v(17,17,45.7802),
+                        v(18,18,47.123),
+                        v(19,19,48.4619),
+                        v(20,20,49.797),
+                        v(21,21,51.1282),
+                        v(22,22,52.4555),
+                        v(23,23,53.779),
+                        v(24,24,55.0986),
+                        v(25,25,56.4144),
+                        v(26,26,57.7263),
+                        v(27,27,59.0343),
+                        v(28,28,60.3385),
+                        v(29,29,61.6388),
+                        v(30,30,62.9353),
+                        v(31,31,64.2279),
+                        v(32,32,65.5167),
+                        v(33,33,66.8016),
+                        v(34,34,68.0826),
+                        v(35,35,69.3598),
+                        v(36,36,70.6331),
+                        v(37,37,71.9026),
+                        v(38,38,73.1682),
+                        v(39,39,74.4299),
+                        v(40,40,75.6878),
+                        v(41,41,76.9418),
+                        v(42,42,78.192),
+                        v(43,43,79.4383),
+                        v(44,44,80.6808),
+                        v(45,45,81.9194),
+                        v(46,46,83.1541),
+                        v(47,47,84.385),
+                        v(48,48,85.612),
+                        v(49,49,86.8352),
+                        v(50,50,88.0545),
+                        v(51,51,89.27),
+                        v(52,52,90.4815),
+                        v(53,53,91.6893),
+                        v(54,54,92.8932),
+                        v(55,55,94.0932),
+                        v(56,56,95.2893),
+                        v(57,57,96.4816),
+                        v(58,58,97.6701),
+                        v(59,59,98.8547),
+                        v(60,60,100.035),
+                        v(61,61,101.212),
+                        v(62,62,102.385),
+                        v(63,63,103.554),
+                        v(64,64,104.72),
+                        v(65,65,105.881),
+                        v(66,66,107.039),
+                        v(67,67,108.192),
+                        v(68,68,109.342),
+                        v(69,69,110.488),
+                        v(70,70,111.63),
+                        v(71,71,112.769),
+                        v(72,72,113.903),
+                        v(73,73,115.034),
+                        v(74,74,116.16),
+                        v(75,75,117.283),
+                        v(76,76,118.402),
+                        v(77,77,119.517),
+                        v(78,78,120.629),
+                        v(79,79,121.736),
+                        v(80,80,122.84),
+                        v(81,81,123.939),
+                        v(82,82,125.035),
+                        v(83,83,126.127),
+                        v(84,84,127.215),
+                        v(85,85,128.3),
+                        v(86,86,129.38),
+                        v(87,87,130.457),
+                        v(88,88,131.529),
+                        v(89,89,132.598),
+                        v(90,90,133.663),
+                        v(91,91,134.724),
+                        v(92,92,135.781),
+                        v(93,93,136.835),
+                        v(94,94,137.884),
+                        v(95,95,138.93),
+                        v(96,96,139.972),
+                        v(97,97,141.01),
+                        v(98,98,142.044),
+                        v(99,99,143.074),
+                        v(100,100,144.101),
+                        v(101,101,145.123),
+                        v(102,102,146.142),
+                        v(103,103,147.157),
+                        v(104,104,148.168),
+                        v(105,105,149.175),
+                        v(106,106,150.178),
+                        v(107,107,151.177),
+                        v(108,108,152.173),
+                        v(109,109,153.165),
+                        v(110,110,154.152),
+                        v(111,111,155.136),
+                        v(112,112,156.117),
+                        v(113,113,157.093),
+                        v(114,114,158.065),
+                        v(115,115,159.034),
+                        v(116,116,159.998),
+                        v(117,117,160.959),
+                        v(118,118,161.916),
+                        v(119,119,162.869),
+                        v(120,120,163.818),
+                        v(121,121,164.764),
+                        v(122,122,165.705),
+                        v(123,123,166.643),
+                        v(124,124,167.577),
+                        v(125,125,168.507),
+                        v(126,126,169.433),
+                        v(127,127,170.355),
+                        v(128,128,171.273),
+                        v(129,129,172.188),
+                        v(130,130,173.099),
+                        v(131,131,174.005),
+                        v(132,132,174.908),
+                        v(133,133,175.807),
+                        v(134,134,176.703),
+                        v(135,135,177.594),
+                        v(136,136,178.482),
+                        v(137,137,179.365),
+                        v(138,138,180.245),
+                        v(139,139,181.121),
+                        v(140,140,181.993),
+                        v(141,141,182.861),
+                        v(142,142,183.726),
+                        v(143,143,184.586),
+                        v(144,144,185.443),
+                        v(145,145,186.295),
+                        v(146,146,187.144),
+                        v(147,147,187.989),
+                        v(148,148,188.831),
+                        v(149,149,189.668),
+                        v(150,150,190.501),
+                        v(151,151,191.331),
+                        v(152,152,192.157),
+                        v(153,153,192.979),
+                        v(154,154,193.797),
+                        v(155,155,194.611),
+                        v(156,156,195.421),
+                        v(157,157,196.228),
+                        v(158,158,197.03),
+                        v(159,159,197.829),
+                        v(160,160,198.624),
+                        v(161,161,199.415),
+                        v(162,162,200.202),
+                        v(163,163,200.986),
+                        v(164,164,201.765),
+                        v(165,165,202.541),
+                        v(166,166,203.313),
+                        v(167,167,204.08),
+                        v(168,168,204.845),
+                        v(169,169,205.605),
+                        v(170,170,206.361),
+                        v(171,171,207.113),
+                        v(172,172,207.862),
+                        v(173,173,208.607),
+                        v(174,174,209.348),
+                        v(175,175,210.085),
+                        v(176,176,210.818),
+                        v(177,177,211.547),
+                        v(178,178,212.273),
+                        v(179,179,212.994),
+                        v(180,180,213.712),
+                        v(181,181,214.426),
+                        v(182,182,215.136),
+                        v(183,183,215.842),
+                        v(184,184,216.544),
+                        v(185,185,217.243),
+                        v(186,186,217.938),
+                        v(187,187,218.628),
+                        v(188,188,219.315),
+                        v(189,189,219.998),
+                        v(190,190,220.677),
+                        v(191,191,221.353),
+                        v(192,192,222.024),
+                        v(193,193,222.692),
+                        v(194,194,223.355),
+                        v(195,195,224.015),
+                        v(196,196,224.671),
+                        v(197,197,225.323),
+                        v(198,198,225.972),
+                        v(199,199,226.616),
+                        v(200,200,227.257),
+                        v(201,201,227.893),
+                        v(202,202,228.526),
+                        v(203,203,229.155),
+                        v(204,204,229.78),
+                        v(205,205,230.402),
+                        v(206,206,231.019),
+                        v(207,207,231.633),
+                        v(208,208,232.242),
+                        v(209,209,232.848),
+                        v(210,210,233.45),
+                        v(211,211,234.048),
+                        v(212,212,234.643),
+                        v(213,213,235.233),
+                        v(214,214,235.82),
+                        v(215,215,236.402),
+                        v(216,216,236.981),
+                        v(217,217,237.556),
+                        v(218,218,238.127),
+                        v(219,219,238.695),
+                        v(220,220,239.258),
+                        v(221,221,239.818),
+                        v(222,222,240.373),
+                        v(223,223,240.925),
+                        v(224,224,241.473),
+                        v(225,225,242.017),
+                        v(226,226,242.558),
+                        v(227,227,243.094),
+                        v(228,228,243.627),
+                        v(229,229,244.155),
+                        v(230,230,244.68),
+                        v(231,231,245.201),
+                        v(232,232,245.718),
+                        v(233,233,246.231),
+                        v(234,234,246.741),
+                        v(235,235,247.246),
+                        v(236,236,247.748),
+                        v(237,237,248.246),
+                        v(238,238,248.74),
+                        v(239,239,249.23),
+                        v(240,240,249.716),
+                        v(241,241,250.199),
+                        v(242,242,250.677),
+                        v(243,243,251.152),
+                        v(244,244,251.623),
+                        v(245,245,252.09),
+                        v(246,246,252.553),
+                        v(247,247,253.012),
+                        v(248,248,253.467),
+                        v(249,249,253.919),
+                        v(250,250,254.367),
+                        v(251,251,254.81),
+                        v(252,252,255.25),
+                        v(253,253,255.686),
+                        v(254,254,256.119)          
+                    );
+                    // ]);
+
+                    // var splinePoints = spline.getPoints(1000);
+                    // for(var i = 0; i < splinePoints.length; i++){
+                    //     fitGeom.vertices.push(new THREE.Vertex( splinePoints[i] ));  
+                    // }                    
+
+                    var fitLineMat = new THREE.LineBasicMaterial({ color: 0xff0000 });
+                    var fitLine = new THREE.Line(fitGeom, fitLineMat);
+                    fitLine.type = THREE.Lines;
+                    scatterPlot.add(fitLine);
+
+
+
+                    // var titleX = createText2D('-X');
+                    // titleX.position.x = -60;
+                    // scatterPlot.add(titleX);
+
+                    var titleX = createText2D('X');
+                    titleX.position.x = dimMax + 5;
+                    scatterPlot.add(titleX);
+
+                    // var titleX = createText2D('-Y');
+                    // titleX.position.y = -60;
+                    // scatterPlot.add(titleX);
+
+                    var titleX = createText2D('Y');
+                    titleX.position.y = dimMax + 5;
+                    scatterPlot.add(titleX);
+
+                    // var titleX = createText2D('-Z');
+                    // titleX.position.z = -60;
+                    // scatterPlot.add(titleX);
+
+                    var titleX = createText2D('Z');
+                    titleX.position.z = dimMax + 5;
+                    scatterPlot.add(titleX);
+
+                    var mat = new THREE.ParticleBasicMaterial({vertexColors:true, size: 1.5, transparent: true , opacity: 0.5});
+
+                    var randomColor = function() {
+                        return Math.floor(Math.random()*16777215);
+                        // return '#' + Math.floor(Math.random()*16777215).toString(16);
+                    }
+
+                    var colors = {};       
+
+                    var pointCount = data.length;
+                    var pointGeo = new THREE.Geometry();
+                    for (var i=0; i < pointCount; i++) {
+                        var arr = data[i];
+                        if (arr) {
+                            var x = arr[0];
+                            var y = arr[1];
+                            var z = arr[2];
+                            var c = arr[3];
+                            if (x && y && z && c) {
+                                pointGeo.vertices.push(new THREE.Vertex( new THREE.Vector3(x,y,z) ));
+                                var indx = pointGeo.vertices.length - 1;
+                                pointGeo.vertices[indx].angle = Math.atan2(z,x);
+                                pointGeo.vertices[indx].radius = Math.sqrt(x*x+z*z);
+                                pointGeo.vertices[indx].speed = (z/100)*(x/100);
+                                var pc = randomColor();
+                                if (colors[c]) {
+                                    pc = colors[c];
+                                }
+                                else {
+                                        colors[c] = pc;
+                                }
+                                pointGeo.colors.push(new THREE.Color(pc));
+                            }
+                        }
+                    }
+                    var iOffset = 0;        
+                    var yOffset = -(Object.keys(colors).length * 2.5) - 40;
+                    console.log('colors after loading all pixels',colors,'yOffset',yOffset);
+                    for (var iClass in colors) {
+                        var titleColor1 = createText2D('Class '+iClass,colors[iClass].toString(16));
+                        titleColor1.position.x = -20;
+                        titleColor1.position.y = yOffset + 5 * iOffset;
+                        scatterPlot.add(titleColor1);
+                        iOffset++;
+                    }
+
+                    var points = new THREE.ParticleSystem(pointGeo, mat);
+                    scatterPlot.add(points);
+
+                    renderer.render(scene, camera);
+                    var paused = false;
+                    var last = new Date().getTime();
+                    var down = false;
+                    var sx = 0, sy = 0;
+                    window.onmousedown = function (ev){
+                        down = true; sx = ev.clientX; sy = ev.clientY;
+                    };
+                    window.onmouseup = function(){ down = false; };
+                    window.onmousemove = function(ev) {
+                        if (down) {
+                            var dx = ev.clientX - sx;
+                            var dy = ev.clientY - sy;
+                            scatterPlot.rotation.y += dx*0.01;
+                            camera.position.y += dy;
+                            sx += dx;
+                            sy += dy;
+                        }
+                    }
+                    
+                    function MouseWheelHandler(e) {
+
+                        // cross-browser wheel delta
+                        var e = window.event || e; // old IE support
+                        var delta = Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail)));
+                        camera.position.z -= 50 * delta;
+                    }
+
+                    if (window.addEventListener) {
+                        // IE9, Chrome, Safari, Opera
+                        window.addEventListener("mousewheel", MouseWheelHandler, false);
+                        // Firefox
+                        window.addEventListener("DOMMouseScroll", MouseWheelHandler, false);
+                    }
+                    // IE 6/7/8
+                    else window.attachEvent("onmousewheel", MouseWheelHandler);          
+
+
+                    var animating = false;
+                    window.ondblclick = function() { animating = !animating; };
+                    function animate(t) {
+                        if (!paused) {
+                            last = t;
+                            if (animating) {
+                                var v = pointGeo.vertices;
+                                for (var i=0; i<v.length; i++) {
+                                    var u = v[i];
+                                    u.angle += u.speed * 0.01;
+                                    u.position.x = Math.cos(u.angle)*u.radius;
+                                    u.position.z = Math.sin(u.angle)*u.radius;
+                                }
+                                pointGeo.__dirtyVertices = true;
+                            }
+                            renderer.clear();
+                            camera.lookAt(scene.position);
+                            renderer.render(scene, camera);
+                        }
+                        window.requestAnimationFrame(animate, renderer.domElement);
+                    };
+                    animate(new Date().getTime());
+                    onmessage = function(ev) {
+                        paused = (ev.data == 'pause');
+                    };
+                    //-->
+                </script>
+            </section>
+        </div>
+    </body>
 </html>
